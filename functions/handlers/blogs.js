@@ -9,7 +9,7 @@ exports.getAllBlogs =  (req, res) => {
                 ...doc.data()
             });
         });
-        return res.json(allBlogs);
+        return res.send(allBlogs);
     });
 
 };
@@ -32,7 +32,7 @@ exports.addOneBlog = (req, res) => {
     db.collection(`blogs`).add(newBlog).then((doc) => {
         return res.json({
           ...newBlog,
-          id: doc.id,
+          id: doc.id
         });
     }).catch((err) => {
         res.status(500).json({error: 'something went wrong'});
@@ -63,6 +63,22 @@ exports.getOneBlog = (req, res) => {
 
     })
 };
+
+exports.getComments = (req, res) => {
+  let comments = [];
+  db.collection('comments').where('blogId', '==', req.params.id).get().then(data => {
+    data.forEach(doc => {
+      comments.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    return res.send(comments);
+  }).catch(err => {
+      console.error(err);
+      return res.status(500).json({error: "something happened"});
+  })
+}
 
 exports.commentOnBlog = (req, res) => {
     if(req.body.comment.trim() === ''){

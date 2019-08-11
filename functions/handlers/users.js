@@ -24,7 +24,7 @@ exports.signup = (req, res) => {
     }
     else if(validator.isEmpty(newUser.password)){
         errors.password = 'Password cannot be empty';
-    }
+      }
     else if(newUser.password !== newUser.confirmPassword){
         errors.confirmPassword = 'password and confirrm password does not match';
     }
@@ -108,24 +108,24 @@ exports.login = (req, res) => {
     })
 };
 
-exports.loginUsingGoogle = (req, res) => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(provider).then((result) =>  {
-      let user = result.user;
-      return res.json({user});
-    }).catch(err => {
-        if(err.code === 'auth/user-not-found'){
-            return res.status(403).json({general: `you don't have an account yet, sign in first`});
-        }
-        else if(err.code === 'auth/wrong-password'){
-            return res.status(403).json({general: `Incorrect password`});
-        }
-        else{
-            return res.status(500).json({err: err.code})
-        }
-
-    })
-};
+// exports.loginUsingGoogle = (req, res) => {
+//     const provider = new firebase.auth.GoogleAuthProvider();
+//     firebase.auth().signInWithPopup(provider).then((result) =>  {
+//       let user = result.user;
+//       return res.json({user});
+//     }).catch(err => {
+//         if(err.code === 'auth/user-not-found'){
+//             return res.status(403).json({general: `you don't have an account yet, sign in first`});
+//         }
+//         else if(err.code === 'auth/wrong-password'){
+//             return res.status(403).json({general: `Incorrect password`});
+//         }
+//         else{
+//             return res.status(500).json({err: err.code})
+//         }
+//
+//     })
+// };
 
 // Upload a profile image for user
 exports.uploadImage = (req, res) => {

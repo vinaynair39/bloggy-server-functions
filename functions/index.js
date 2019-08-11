@@ -1,6 +1,6 @@
 const functions = require('firebase-functions');
 const express = require('express');
-const { getAllBlogs, addOneBlog , getOneBlog, commentOnBlog, likeOnBlog , unlikeOnBlog, deleteBlog} = require('./handlers/blogs');
+const { getAllBlogs, addOneBlog , getOneBlog, commentOnBlog, likeOnBlog , unlikeOnBlog, deleteBlog, getComments} = require('./handlers/blogs');
 const { signup, login, uploadImage, addUserDetails, getAuthenticatedUser, getUserDetails, markNotificationsRead, loginUsingGoogle} = require('./handlers/users');
 const FBAuth = require('./util/FBAuth');
 const {db} = require('./util/admin')
@@ -18,6 +18,7 @@ app.post('/blog/:blogId/like',FBAuth, likeOnBlog);
 app.post('/blog/:blogId/unlike',FBAuth, unlikeOnBlog);
 //comment on a blog
 app.post('/blog/:blogId/comment',FBAuth, commentOnBlog);
+app.get('/blog/:id/comments',FBAuth, getComments);
 app.delete('/blog/:blogId/delete',FBAuth, deleteBlog);
 
 
@@ -25,7 +26,7 @@ app.delete('/blog/:blogId/delete',FBAuth, deleteBlog);
 app.post('/signup', signup);
 //login
 app.post('/login', login );
-app.post('/signin', loginUsingGoogle);
+// app.post('/signin', loginUsingGoogle);
 
 //upload image
 app.post('/user/image', FBAuth, uploadImage);
