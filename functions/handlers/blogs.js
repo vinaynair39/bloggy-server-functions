@@ -14,6 +14,18 @@ exports.getAllBlogs =  (req, res) => {
 
 };
 
+exports.editBlog = (req,res) => {
+
+  db.doc(`blogs/${req.params.blogId}`).update({
+    ...req.body
+  }).then(()=>{
+      return res.json({message: 'details added successfully'})
+  }).catch(err => {
+      console.error(err);
+      return res.status(401).json({error: "something happened"})
+  })
+}
+
 
 
 exports.addOneBlog = (req, res) => {

@@ -108,6 +108,9 @@ exports.login = (req, res) => {
     })
 };
 
+exports.getUserHandle = (req,res) => {
+    return res.send(req.user.userHandle);
+}
 // exports.loginUsingGoogle = (req, res) => {
 //     const provider = new firebase.auth.GoogleAuthProvider();
 //     firebase.auth().signInWithPopup(provider).then((result) =>  {
@@ -231,6 +234,7 @@ exports.uploadImage = (req, res) => {
           return res.status(500).json({error: 'something happened while fetchin user credentials'});
       })
   };
+
 
 exports.getUserDetails = (req, res) => {
     let userData = {};
