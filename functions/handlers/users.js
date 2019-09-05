@@ -12,10 +12,12 @@ exports.signup = (req, res) => {
     }
     const noImg = 'no-img.png';
     const newUser= {
+        name: req.body.name,
         email: req.body.email,
         password: req.body.password,
         confirmPassword: req.body.confirmPassword,
         userHandle: req.body.userHandle,
+        name: req.body.name
     };
 
     let errors = {};
@@ -30,6 +32,9 @@ exports.signup = (req, res) => {
     }
     else if(validator.isEmpty(newUser.userHandle)){
         errors.userHandle = 'userHandle cannot be empty';
+    }
+    else if(validator.isEmpty(newUser.name)){
+        errors.userHandle = 'name cannot be empty';
     }
 
     if(Object.keys(errors).length > 0){
@@ -52,6 +57,7 @@ exports.signup = (req, res) => {
                     userHandle: newUser.userHandle,
                     email: newUser.email,
                     createdAt: new Date().toISOString(),
+                    name: newUser.name,
                     imageUrl: `https://firebasestorage.googleapis.com/v0/b/${
                     firebaseConfig.storageBucket
                     }/o/${noImg}?alt=media`,
@@ -132,6 +138,7 @@ exports.getUserHandle = (req,res) => {
 
 // Upload a profile image for user
 exports.uploadImage = (req, res) => {
+    let imageUrl;
     const BusBoy = require('busboy');
     const path = require('path');
     const os = require('os');
@@ -168,17 +175,17 @@ exports.uploadImage = (req, res) => {
           }
         })
         .then(() => {
-          const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${
+          imageUrl = `https://firebasestorage.googleapis.com/v0/b/${
             firebaseConfig.storageBucket
           }/o/${imageFileName}?alt=media`;
           return db.doc(`/users/${req.user.userHandle}`).update({ imageUrl });
         })
         .then(() => {
-          return res.json({ message: 'image uploaded successfully' });
+          return res.send(imageUrl);
         })
         .catch((err) => {
           console.error(err);
-          return res.status(500).json({ error: 'something went wrong' });
+          return res.status(500).json({ error: err.code });
         });
     });
     busboy.end(req.rawBody);
@@ -278,3 +285,30 @@ exports.markNotificationsRead = (req, res) => {
         return res.status(500).json({ error: err.code });
       });
   };
+
+
+  exports.getFamousUser = (req, res) => {
+    let users = [];
+    let famousBlogs = [];
+    let promises= [];
+    db.collection('blogs').orderBy('likeCount','desc').limit(5).get().then(data => {
+      data.forEach(doc => {
+        famousBlogs.push(doc.data());
+        promises.push(db.doc(`/users/${doc.data().userHandle}`).get());
+      });
+
+    Promise.all(promises).then((snapshots) => {
+    snapshots.forEach((querySnapshot) => {
+        let exist = false;
+        users.forEach(user => {
+          if(user.userHandle === querySnapshot.data().userHandle)
+            exist=true;
+        })
+        !exist && users.push(querySnapshot.data());
+    });
+    res.send(users);
+    })}).catch((err) => {
+      console.error(err);
+      return res.status(500).json({ error: err.code });
+    });
+}

@@ -118,7 +118,20 @@ exports.commentOnBlog = (req, res) => {
         return res.status(500).json({error: "error while adding the comment" + err})
     })
 }
-
+exports.checkLike = (req, res) => {
+  db.collection('likes').where('userHandle', '==', req.user.userHandle)
+  .where('blogId', '==', req.params.blogId).get().then(data => {
+    if(data.empty){
+      return res.send(false);
+    }
+    else{
+      return res.send(true);
+    }
+  }).catch((err) => {
+    console.error(err);
+    res.status(500).json({ error: err.code });
+  });
+}
 exports.likeOnBlog = (req, res) => {
     const likeDoc = db.collection('likes')
     .where('userHandle', '==', req.user.userHandle)
