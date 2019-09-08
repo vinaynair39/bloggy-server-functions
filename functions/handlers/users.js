@@ -63,6 +63,7 @@ exports.signup = (req, res) => {
                     }/o/${noImg}?alt=media`,
                     userId
                 };
+                db.doc(`/follows/${newUser.userHandle}`).set({followers: [], following: []});
                 db.doc(`/users/${newUser.userHandle}`).set(userCredentials);
             }).then(() => {
                 return res.status(201).json({token})
@@ -117,24 +118,7 @@ exports.login = (req, res) => {
 exports.getUserHandle = (req,res) => {
     return res.send(req.user.userHandle);
 }
-// exports.loginUsingGoogle = (req, res) => {
-//     const provider = new firebase.auth.GoogleAuthProvider();
-//     firebase.auth().signInWithPopup(provider).then((result) =>  {
-//       let user = result.user;
-//       return res.json({user});
-//     }).catch(err => {
-//         if(err.code === 'auth/user-not-found'){
-//             return res.status(403).json({general: `you don't have an account yet, sign in first`});
-//         }
-//         else if(err.code === 'auth/wrong-password'){
-//             return res.status(403).json({general: `Incorrect password`});
-//         }
-//         else{
-//             return res.status(500).json({err: err.code})
-//         }
-//
-//     })
-// };
+
 
 // Upload a profile image for user
 exports.uploadImage = (req, res) => {
@@ -233,9 +217,14 @@ exports.uploadImage = (req, res) => {
                 });
               }
           });
-            return res.json(userData)
-      })
-
+            return db.doc(`follows/${req.user.userHandle}`).get();
+        }).then(doc => {
+              userData.follows = {
+                followers:doc.data(). followers.length,
+                following:doc.data().following.length
+              };
+            return res.json(userData);
+          })
       .catch(err =>{
           console.error(err);
           return res.status(500).json({error: 'something happened while fetchin user credentials'});
@@ -260,7 +249,13 @@ exports.getUserDetails = (req, res) => {
                 ...doc.data(),
                 blogId: doc.id
             });
-        }));
+        })
+
+      );
+        return db.doc(`follows/${req.params.userHandle}`).get();
+    }).then(doc => {
+        userData.follows = {};
+        userData.follows = doc.data();
         return res.json(userData);
     }).catch((err) => {
         console.error(err);
@@ -286,7 +281,35 @@ exports.markNotificationsRead = (req, res) => {
       });
   };
 
+exports.followUser = (req, res) => {
+  let batch = db.batch();
+  const recipient = req.body.recipient;
+  const sender = db.doc(`follows/${req.user.userHandle}`);
+  batch.update(sender, {following:admin.firestore.FieldValue.arrayUnion(recipient)});
+  const receiver = db.doc(`follows/${recipient}`);
+  batch.update(receiver, {followers:admin.firestore.FieldValue.arrayUnion(req.user.userHandle)});
+  return batch.commit().then(() => res.send('You started following ' + recipient + '!')
+  ).catch((err) => {
+    console.error(err);
+    return res.status(500).json({ error: err.code });
+  });
+}
 
+
+
+exports.unfollowUser = (req, res) => {
+  let batch = db.batch();
+  const recipient = req.body.recipient;
+  const sender = db.doc(`follows/${req.user.userHandle}`);
+  batch.update(sender, {following:admin.firestore.FieldValue.arrayRemove(recipient)});
+  const receiver = db.doc(`follows/${recipient}`);
+  batch.update(receiver, {followers:admin.firestore.FieldValue.arrayRemove(req.user.userHandle)});
+  return batch.commit().then(() => res.send('You unfollowed ' + recipient + '!')
+  ).catch((err) => {
+    console.error(err);
+    return res.status(500).json({ error: err.code });
+  });
+}
   exports.getFamousUser = (req, res) => {
     let users = [];
     let famousBlogs = [];
@@ -311,4 +334,13 @@ exports.markNotificationsRead = (req, res) => {
       console.error(err);
       return res.status(500).json({ error: err.code });
     });
+}
+
+exports.getFollows = (req, res) => {
+  db.doc(`follows/${req.user.userHandle}`).get().then((doc) => {
+      res.json(doc.data());
+  }).catch((err) => {
+    console.error(err);
+    return res.status(500).json({ error: err.code });
+  });
 }
