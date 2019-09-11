@@ -1,7 +1,7 @@
 const functions = require('firebase-functions');
 const express = require('express');
 const { getAllBlogs, addOneBlog , getOneBlog, commentOnBlog, likeOnBlog , unlikeOnBlog,checkLike, deleteBlog, getComments, editBlog} = require('./handlers/blogs');
-const { signup, login, uploadImage, addUserDetails, getAuthenticatedUser,getFamousUser, followUser, unfollowUser, getFollows, getUserDetails, markNotificationsRead,getUserHandle, loginUsingGoogle} = require('./handlers/users');
+const { signup, login, uploadImage, addUserDetails, getAuthenticatedUser,getFamousUser, followUser, unfollowUser, getFollows, getFollowsOf, getUserDetails, markNotificationsRead,getUserHandle, loginUsingGoogle} = require('./handlers/users');
 const FBAuth = require('./util/FBAuth');
 const {db} = require('./util/admin')
 const app = express();
@@ -42,6 +42,7 @@ app.get('/user/:userHandle', getUserDetails);
 app.post('/notification',FBAuth,markNotificationsRead);
 app.get('/famousUser',getFamousUser);
 app.get('/getFollows',FBAuth,  getFollows);
+app.get('/getFollows/:userHandle',getFollowsOf);
 
 
 exports.api = functions.region('asia-east2').https.onRequest(app);

@@ -37,7 +37,7 @@ exports.addOneBlog = (req, res) => {
         title: req.body.title,
         description: req.body.description,
         userHandle: req.user.userHandle,
-        createdAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),z
         likeCount: 0,
         commentCount: 0
     };

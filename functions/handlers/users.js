@@ -175,6 +175,59 @@ exports.uploadImage = (req, res) => {
     busboy.end(req.rawBody);
   };
 
+  exports.uploadBlogImage = (req, res) => {
+      let imageUrl;
+      const BusBoy = require('busboy');
+      const path = require('path');
+      const os = require('os');
+      const fs = require('fs');
+
+      const busboy = new BusBoy({ headers: req.headers });
+
+      let imageToBeUploaded = {};
+      let imageFileName;
+
+      busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
+        console.log(fieldname, file, filename, encoding, mimetype);
+        if (mimetype !== 'image/jpeg' && mimetype !== 'image/png') {
+          return res.status(400).json({ error: 'Wrong file type submitted' });
+        }
+        // my.image.png => ['my', 'image', 'png']
+        const imageExtension = filename.split('.')[filename.split('.').length - 1];
+        // 32756238461724837.png
+        imageFileName = `${req.body.blogId}.${imageExtension}`;
+        const filepath = path.join(os.tmpdir(), imageFileName);
+        imageToBeUploaded = { filepath, mimetype };
+        file.pipe(fs.createWriteStream(filepath));
+      });
+      busboy.on('finish', () => {
+        admin
+          .storage()
+          .bucket()
+          .upload(imageToBeUploaded.filepath, {
+            resumable: false,
+            metadata: {
+              metadata: {
+                contentType: imageToBeUploaded.mimetype
+              }
+            }
+          })
+          .then(() => {
+            imageUrl = `https://firebasestorage.googleapis.com/v0/b/${
+              firebaseConfig.storageBucket
+            }/o/${imageFileName}?alt=media`;
+            return db.doc(`/users/${req.user.userHandle}`).update({ imageUrl });
+          })
+          .then(() => {
+            return res.send(imageUrl);
+          })
+          .catch((err) => {
+            console.error(err);
+            return res.status(500).json({ error: err.code });
+          });
+      });
+      busboy.end(req.rawBody);
+    };
 
   exports.addUserDetails = (req, res) => {
       let details = {};
@@ -220,8 +273,8 @@ exports.uploadImage = (req, res) => {
             return db.doc(`follows/${req.user.userHandle}`).get();
         }).then(doc => {
               userData.follows = {
-                followers:doc.data(). followers.length,
-                following:doc.data().following.length
+                followers:doc.data(). followers,
+                following:doc.data().following
               };
             return res.json(userData);
           })
@@ -314,6 +367,7 @@ exports.unfollowUser = (req, res) => {
     let users = [];
     let famousBlogs = [];
     let promises= [];
+    let follows =[];
     db.collection('blogs').orderBy('likeCount','desc').limit(5).get().then(data => {
       data.forEach(doc => {
         famousBlogs.push(doc.data());
@@ -330,7 +384,8 @@ exports.unfollowUser = (req, res) => {
         !exist && users.push(querySnapshot.data());
     });
     res.send(users);
-    })}).catch((err) => {
+  })
+  }).catch((err) => {
       console.error(err);
       return res.status(500).json({ error: err.code });
     });
@@ -338,6 +393,15 @@ exports.unfollowUser = (req, res) => {
 
 exports.getFollows = (req, res) => {
   db.doc(`follows/${req.user.userHandle}`).get().then((doc) => {
+      res.json(doc.data());
+  }).catch((err) => {
+    console.error(err);
+    return res.status(500).json({ error: err.code });
+  });
+}
+
+exports.getFollowsOf = (req, res) => {
+  db.doc(`follows/${req.params.userHandle}`).get().then((doc) => {
       res.json(doc.data());
   }).catch((err) => {
     console.error(err);
