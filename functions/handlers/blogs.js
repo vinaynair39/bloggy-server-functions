@@ -1,4 +1,7 @@
-const {db} = require('../util/admin');
+const { db, admin }  = require('../util/admin');
+const firebase = require('firebase');
+const {firebaseConfig} = require('../util/config');
+const uuid = require('uuid');
 
 exports.getAllBlogs =  (req, res) => {
     db.collection(`blogs`).orderBy('createdAt', 'desc').get().then((snapshot) => {
@@ -29,19 +32,63 @@ exports.editBlog = (req,res) => {
 
 
 exports.addOneBlog = (req, res) => {
+  const path = require('path');
+  const os = require('os');
+  const fs = require('fs');
+  let imageToBeUploaded = {};
+  let imageFileName;
+  let newBlog = {};
+  if(req.method !== 'POST'){
+      return res.status(400).json({error: 'method not allowed'});
+  }
+  const {
+    fieldname,
+    originalname,
+    encoding,
+    mimetype,
+    buffer,
+  } = req.files[0]
 
-    if(req.method !== 'POST'){
-        return res.status(400).json({error: 'method not allowed'});
+  console.log(originalname);
+  if (mimetype !== 'image/jpeg' && mimetype !== 'image/png') {
+    return res.status(400).json({ error: 'Wrong file type submitted' });
+  }
+  console.log(uuid());
+  const imageExtension = originalname.split('.')[originalname.split('.').length - 1];
+  imageFileName = `${uuid()}.${imageExtension}`;
+  const filepath = path.join(os.tmpdir(), imageFileName);
+  imageToBeUploaded = { filepath, mimetype };
+  fs.writeFile(filepath, buffer, (err) => {
+  if(!err) console.log('Data written');
+});
+  console.log(buffer)
+  admin
+    .storage()
+    .bucket()
+    .upload(imageToBeUploaded.filepath, {
+      resumable: false,
+      metadata: {
+        metadata: {
+          contentType: imageToBeUploaded.mimetype
+        }
+      }
+    })
+    .then(() => {
+      imageUrl = `https://firebasestorage.googleapis.com/v0/b/${
+        firebaseConfig.storageBucket
+      }/o/${imageFileName}?alt=media`;
+      newBlog = {
+          title: req.body.title,
+          description: req.body.description,
+          userHandle: req.user.userHandle,
+          createdAt: new Date().toISOString(),
+          likeCount: 0,
+          commentCount: 0,
+          imageUrl: imageUrl
     }
-    const newBlog = {
-        title: req.body.title,
-        description: req.body.description,
-        userHandle: req.user.userHandle,
-        createdAt: new Date().toISOString(),z
-        likeCount: 0,
-        commentCount: 0
-    };
-    db.collection(`blogs`).add(newBlog).then((doc) => {
+    return db.collection(`blogs`).add(newBlog);
+  }).
+    then((doc) => {
         return res.json({
           ...newBlog,
           id: doc.id
@@ -51,6 +98,7 @@ exports.addOneBlog = (req, res) => {
         console.error(err);
     })
 }
+
 
 exports.getOneBlog = (req, res) => {
     let blog = {};
@@ -71,7 +119,6 @@ exports.getOneBlog = (req, res) => {
     }).catch(err => {
         console.error(err);
         return res.status(500).json({error: "something happened"});
-
 
     })
 };

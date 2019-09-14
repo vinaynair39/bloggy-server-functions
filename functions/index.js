@@ -5,12 +5,12 @@ const { signup, login, uploadImage, addUserDetails, getAuthenticatedUser,getFamo
 const FBAuth = require('./util/FBAuth');
 const {db} = require('./util/admin')
 const app = express();
-
+const fileParser = require('express-multipart-file-parser')
 
 //display all blogs
 app.get('/blogs', getAllBlogs );
 //add a new blog
-app.post('/add', FBAuth, addOneBlog );
+app.post('/add', FBAuth, fileParser, addOneBlog );
 //get a particular  blog
 app.get('/blog/:id', getOneBlog);
 //delete a blog

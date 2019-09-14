@@ -127,14 +127,12 @@ exports.uploadImage = (req, res) => {
     const path = require('path');
     const os = require('os');
     const fs = require('fs');
-
     const busboy = new BusBoy({ headers: req.headers });
 
     let imageToBeUploaded = {};
     let imageFileName;
 
     busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
-      console.log(fieldname, file, filename, encoding, mimetype);
       if (mimetype !== 'image/jpeg' && mimetype !== 'image/png') {
         return res.status(400).json({ error: 'Wrong file type submitted' });
       }
@@ -188,7 +186,7 @@ exports.uploadImage = (req, res) => {
       let imageFileName;
 
       busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
-        console.log(fieldname, file, filename, encoding, mimetype);
+        console.log('file' + file);
         if (mimetype !== 'image/jpeg' && mimetype !== 'image/png') {
           return res.status(400).json({ error: 'Wrong file type submitted' });
         }
@@ -273,7 +271,7 @@ exports.uploadImage = (req, res) => {
             return db.doc(`follows/${req.user.userHandle}`).get();
         }).then(doc => {
               userData.follows = {
-                followers:doc.data(). followers,
+                followers:doc.data().followers,
                 following:doc.data().following
               };
             return res.json(userData);
